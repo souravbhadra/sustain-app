@@ -132,7 +132,6 @@ def get_planet_image_path(geojson_geom, date, out_dir):
     
     # Get the image_ids from the given filter values
     image_ids = get_image_ids(geojson_geom, date)
-    print(image_ids)
     
     # Get the download link
     download_link = get_download_link(image_ids[0])

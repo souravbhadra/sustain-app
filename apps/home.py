@@ -99,13 +99,17 @@ def app():
                     os.remove(image_bounds_path)
                 with st.spinner('Running'):
                     with tempfile.TemporaryDirectory() as tmpdir:
+                        
                         since = time.time()
                         planet_img_path = pb.get_planet_image_path(geojson_geom, date, tmpdir)
                         time_elapsed = (time.time()-since)/60.0
                         st.sidebar.info(f'Image downloaded in {time_elapsed:.2f} minutes')
+                        
+                        since = time.time()
                         ip.process_raster(planet_img_path, geojson_geom)
-                        st.sidebar.info("Index Calculated")
-                        #index_image_binary = ip.png_to_binary(index_path)
+                        time_elapsed = (time.time()-since)/60.0
+                        st.sidebar.info(f"Index Calculated in {time_elapsed:.2f} minutes")
+                        
                         gp.save_geojson_bounds(geojson_geom)
                         st.balloons()
                         st.sidebar.success("Processing Finishsed. Go to result now!")

@@ -1,6 +1,10 @@
 import rasterio
 import rasterio.mask
 from rasterio.warp import calculate_default_transform, reproject, Resampling
+from shapely.geometry import shape
+import json
+import pyproj
+from shapely.ops import transform
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import matplotlib.pyplot as plt
@@ -37,6 +41,25 @@ def reproject_raster(src_image_path, dst_crs='EPSG:4326'):
 
 
 
+def reproject_shape(geojson_geom, in_epsg, out_epsg):
+
+    # Convert the GeoJSON geometry to a Shapely geometry
+    geom = shape(geojson_geom)
+
+    # Define the input and output projections
+    in_proj = pyproj.CRS(f'EPSG:{in_epsg}')
+    out_proj = pyproj.CRS(f'EPSG:{out_epsg}')
+    
+    # Define the transformation function
+    project = pyproj.Transformer.from_crs(in_proj, out_proj, always_xy=True).transform
+
+    reprojected_geom = transform(project, geom)
+     
+    # Convert the reprojected geometry to a GeoJSON geometry
+    geojson_geom_proj = json.loads(json.dumps(reprojected_geom.__geo_interface__))
+    
+    return geojson_geom_proj
+
 def calculate_index(img):
     nir = img[7, :, :]
     red = img[5, :, :]
@@ -46,13 +69,17 @@ def calculate_index(img):
 def clip_raster(planet_image_gcs_path, geojson_geom):
     # Read data
     src = rasterio.open(planet_image_gcs_path)
+    # Convert the shapefile projection
+    out_epsg = src.crs.to_epsg()
+    geojson_geom_proj = reproject_shape(geojson_geom, '4326', out_epsg)
     # Clip the raster
     mask_img, _ = rasterio.mask.mask(
         src,
-        [geojson_geom],
+        [geojson_geom_proj],
         crop=True,
         filled=True
     )
+    del src
     return mask_img
 
 def save_img_png(out_path_png, img):
@@ -67,9 +94,9 @@ def save_img_png(out_path_png, img):
 def process_raster(planet_image_path, geojson_geom):
     
     # Change projection to GCS
-    planet_image_gcs_path = reproject_raster(planet_image_path)
+    #planet_image_gcs_path = reproject_raster(planet_image_path)
     # Clip raster
-    mask_img = clip_raster(planet_image_gcs_path, geojson_geom)
+    mask_img = clip_raster(planet_image_path, geojson_geom)
     # Calcualte the index
     mask_img_index = calculate_index(mask_img)
     # Save as png

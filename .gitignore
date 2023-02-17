@@ -2,7 +2,9 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
 users/
+notebooks/
 test.py
+data/temp/
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

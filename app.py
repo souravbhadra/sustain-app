@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit_authenticator as stauth
 
 from multiapp import MultiApp
-from apps import home, result, app1, app2
+from apps import home, result
 
 from utils import database as db
 

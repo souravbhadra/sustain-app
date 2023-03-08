@@ -1,10 +1,12 @@
 import pickle
+import json
 from geopy import Nominatim
 import pyproj
 from shapely.geometry import shape
 import shapely.ops as ops
 from shapely.geometry.polygon import Polygon
 from functools import partial
+from shapely.ops import transform
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -22,6 +24,28 @@ def geocoder(address):
     locator = Nominatim(user_agent="myGeocoder")
     location = locator.geocode(address)
     return location.latitude, location.longitude
+
+
+def reproject_shape(
+    geojson_geom,
+    in_epsg,
+    out_epsg
+):
+    # Convert the GeoJSON geometry to a Shapely geometry
+    geom = shape(geojson_geom)
+    # Define the input and output projections
+    in_proj = pyproj.CRS(f'EPSG:{in_epsg}')
+    out_proj = pyproj.CRS(f'EPSG:{out_epsg}')
+    # Define the transformation function  
+    project = pyproj.Transformer.from_crs(
+        in_proj, out_proj, always_xy=True
+    ).transform
+    reprojected_geom = transform(project, geom)
+    # Convert the reprojected geometry to a GeoJSON geometry
+    geojson_geom_proj = json.loads(
+        json.dumps(reprojected_geom.__geo_interface__)
+    )
+    return geojson_geom_proj
 
 
 def calculate_area(geojson_geom):
@@ -52,10 +76,11 @@ def calculate_area(geojson_geom):
     return area
 
 
-def save_geojson_bounds(geojson_geom):
+def get_geojson_bounds(geojson_geom):
     geom = shape(geojson_geom)
     bounds = geom.bounds
     image_bounds = [[bounds[1], bounds[0]], [bounds[3], bounds[2]]]
-    out_path = 'data/image_bounds.pkl'
-    with open(out_path, 'wb') as f:
-        pickle.dump(image_bounds, f)
+    #out_path = 'data/image_bounds.pkl'
+    #with open(out_path, 'wb') as f:
+    #    pickle.dump(image_bounds, f)
+    return image_bounds

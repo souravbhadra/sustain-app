@@ -1,10 +1,12 @@
 import os
 import tempfile
 import time
+import datetime
 import streamlit as st
 import folium
 from streamlit_folium import st_folium
 from dotenv import load_dotenv
+from PIL import Image
 
 from utils import database as db
 from utils import geoprocessing as gp
@@ -23,18 +25,38 @@ mapbox_tile_URL = f"https://api.mapbox.com/styles/v1/mapbox/{tileset_ID_str}/til
 def app():
     
     # Date input
+    date_help = "The date should be at least 7 days prior to the current date. We will \
+        search images between the date you have selected and 15 days prior to that date.\
+        Your selected date can NOT be prior to 2022."
+    maximum_date = datetime.datetime.now()-datetime.timedelta(days=7)
+    minimum_date = datetime.date(2022, 1, 1)
     date = st.sidebar.date_input(
         "Date",
-        value=None,
-        min_value=None,
-        max_value=None, 
-        help=None
+        value=maximum_date,
+        min_value=minimum_date,
+        max_value=maximum_date, 
+        help=date_help
     )
+    st.session_state['request_date'] = date.strftime("%Y-%m-%d")    
+
+    
+    if 'map_zoom' not in st.session_state:
+        map_zoom = 4
+    else:
+        map_zoom = st.session_state.map_zoom
+    if 'map_lat' not in st.session_state:
+        map_lat = 39
+    else:
+        map_lat = st.session_state.map_lat
+    if 'map_lon' not in st.session_state:
+        map_lon = -100
+    else:
+        map_lon = st.session_state.map_lon
     
     # Draw the map
     m = folium.Map(
-        location=[39, -100],
-        zoom_start=4,
+        location=[map_lat, map_lon], #[39, -100]
+        zoom_start=map_zoom,
         tiles=mapbox_tile_URL,
         attr='Mapbox'
     )
@@ -49,13 +71,14 @@ def app():
             'circlemarker': False
         }
     ).add_to(m)
+
     
     output = st_folium(
         m,
-        width=900,
-        height=500,
-        returned_objects=["all_drawings"]
+        width=900, 
+        height=500
     )
+    
     last_draw = output["all_drawings"]
 
     # Check the polygon
@@ -76,7 +99,7 @@ def app():
         
         # Calculate the area of the drawn polygon
         area = gp.calculate_area(geojson_geom)
-        if area > 5:
+        if area > 50:
             st.sidebar.warning(f"The AOI is too large ({area:.2f} Sq Km), it has to be less than 5 Sq Km or 500 acres")
             request_button = st.sidebar.button(
                 label='Submit Request',
@@ -84,7 +107,8 @@ def app():
                 disabled=True
             )
         else:
-            st.sidebar.warning(f"Your AOI is {area:.2f} Sq Km and you are ready to start processing.")
+            st.session_state["aoi_area"] = area
+            st.sidebar.success(f"Your AOI is {area:.2f} Sq Km and you are ready to start processing.")
             #st.sidebar.write(coordinates)
             request_button = st.sidebar.button(
                 label='Submit Request',
@@ -92,24 +116,36 @@ def app():
                 disabled=False
             )
             if request_button:
-                st.sidebar.info('Processing started. Please be patient! It can take as long as 15 minutes.')
-                # Delete if there is any image_bounds.pkl in the data folder
-                image_bounds_path = 'data/image_bounds.pkl'
-                if os.path.exists(image_bounds_path):
-                    os.remove(image_bounds_path)
+                st.sidebar.info('Processing can take 15-20 minutes, please be patient!')
                 with st.spinner('Running'):
                     with tempfile.TemporaryDirectory() as tmpdir:
                         
                         since = time.time()
-                        planet_img_path = pb.get_planet_image_path(geojson_geom, date, tmpdir)
-                        time_elapsed = (time.time()-since)/60.0
-                        st.sidebar.info(f'Image downloaded in {time_elapsed:.2f} minutes')
+                        # Define the planet engine and search for assets
+                        planet_engine = pb.PlanetEngine(
+                            geojson_geom, date
+                        )
+                        image_ids = planet_engine.search_assets()
                         
-                        since = time.time()
-                        ip.process_raster(planet_img_path, geojson_geom)
-                        time_elapsed = (time.time()-since)/60.0
-                        st.sidebar.info(f"Index Calculated in {time_elapsed:.2f} minutes")
+                        planet_img_path = planet_engine.download_asset(
+                            image_ids[0], tmpdir
+                        )
+                        image_processor = ip.ImageProcessor(planet_img_path, geojson_geom)
                         
-                        gp.save_geojson_bounds(geojson_geom)
+                        ndvi = image_processor.ndvi()
+                        ndre = image_processor.ndre()
+                        
+                        del image_processor
+                        
+                        st.session_state['image_bounds'] = gp.get_geojson_bounds(geojson_geom)
+                        st.session_state['NDVI'] = ndvi
+                        st.session_state['NDRE'] = ndre
+                            
+                        time_elapsed = (time.time()-since)/60.0
+                        
                         st.balloons()
-                        st.sidebar.success("Processing Finishsed. Go to result now!")
+                        st.sidebar.success(f"Processing Finishsed in {time_elapsed:.2f} minutes. Go to result now!")
+                        
+                        st.session_state['map_zoom'] = output["zoom"]
+                        st.session_state['map_lat'] = output["center"]["lat"]
+                        st.session_state['map_lon'] = output["center"]["lng"]

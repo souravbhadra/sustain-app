@@ -6,14 +6,19 @@ from apps import home, result
 
 from utils import database as db
 
-
 # Title stuffs
 st.set_page_config(page_title="SustaiN", layout="wide")
-st.title("SustaiN")
-st.write(
-    """
-    A Decision Support System for Sustainable Nitrogen Management in Corn and Sorghum using Remote Sensing
-    """
+st.sidebar.markdown("""
+<style>
+.big-font {
+    font-size:50px !important;
+}
+</style>
+""", unsafe_allow_html=True)
+st.sidebar.markdown('<p class="big-font">SustaiN</p>', unsafe_allow_html=True)
+st.sidebar.markdown(
+    'Sustainable Nitrogen Management for Corn and Sorghum using Remote Sensing',
+    unsafe_allow_html=True
 )
 
 ## LOGIN
@@ -32,7 +37,7 @@ authenticator = stauth.Authenticate(
     credentials,
     cookie_name="sustain_app",
     key="abcdef",
-    cookie_expiry_days=30
+    cookie_expiry_days=1
 )
 name, auth_status, _ = authenticator.login("Login", "main")
 
@@ -47,12 +52,29 @@ if auth_status == None:
     
 if auth_status:
     
-    st.sidebar.title(f"Welcome {name}")
+    st.sidebar.header(f"Welcome _{name}_")
     authenticator.logout("Logout", "sidebar")
-        
+    st.session_state['username'] = name
+    
+    #with open('howto.md', 'r') as f:
+    #    howto = f.read()
+    
+    #with st.sidebar.expander("How to use this app?"):
+    #    st.markdown(howto)
+    
+    st.sidebar.markdown("[How to use this app?](https://duckduckgo.com)")
 
     app = MultiApp()
 
     app.add_app("Home", home.app)
     app.add_app("Result", result.app)
     app.run()
+    
+    
+hide_menu_style = """
+        <style>
+        #MainMenu {visibility: hidden; }
+        footer {visibility: hidden;}
+        </style>
+        """
+st.markdown(hide_menu_style, unsafe_allow_html=True)

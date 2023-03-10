@@ -66,7 +66,7 @@ def save_folium(
 def save_style_css(
     temp_dir
 ):    
-    src_file = "utils\report_style.css"
+    src_file = os.path.join(os.getcwd(), 'utils', 'report_style.css')
     dst_file = os.path.join(temp_dir, 'style.css')
     shutil.copy(src_file, dst_file)
     return dst_file

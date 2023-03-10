@@ -7,7 +7,7 @@ import tempfile
 import shutil
 import os
 
-from utils import image_placement
+from utils import image_management as im
 
 
 def colorize(
@@ -66,7 +66,7 @@ def save_folium(
 def save_style_css(
     temp_dir
 ):    
-    src_file = "utils\style.css"
+    src_file = "utils\report_style.css"
     dst_file = os.path.join(temp_dir, 'style.css')
     shutil.copy(src_file, dst_file)
     return dst_file
@@ -75,7 +75,16 @@ def save_report_html(
     metadata,
     temp_dir
 ):  
-    cmap_html = image_placement.img_to_html(
+    sutain_logo_html = im.img_to_html(
+        os.path.join(
+            os.getcwd(),
+            'images',
+            'logo.png'
+        ),
+        margin=(0, 0, 30, 0),
+        width='auto'
+    )
+    cmap_html = im.img_to_html(
         os.path.join(
             os.getcwd(),
             'images',
@@ -84,7 +93,7 @@ def save_report_html(
         margin=(0, 0, 0, 0),
         width=100
     )
-    bottom_logo_html = image_placement.img_to_html(
+    bottom_logo_html = im.img_to_html(
         os.path.join(
             os.getcwd(),
             'images',
@@ -93,6 +102,7 @@ def save_report_html(
         margin=(0, 0, 0, 0),
         width=100
     )
+    metadata['SUSTAIN_LOGO'] = sutain_logo_html
     metadata['CMAP_HTML'] = cmap_html
     metadata['BOTTOM_LOGO_HTML'] = bottom_logo_html
     template_fpath = os.path.join(

@@ -1,9 +1,10 @@
+import os
 import streamlit as st
 
 from multiapp import MultiApp
-from apps import home, result
+from apps import home, result, feedback
 
-from utils import image_placement
+from utils import image_management as im
 from utils import authentication
 
 
@@ -17,21 +18,28 @@ st.set_page_config(
 
 
 if 'logged_in' not in st.session_state:
-    image_placement.insert_image('images\logo.png', False)
+    im.insert_image(
+        os.path.join(os.getcwd(), 'images', 'logo.png'), False
+    )
     st.session_state['logged_in'] = False
     authentication.show_login_page()
 else:
     if st.session_state['logged_in']:
-        image_placement.insert_image('images\logo.png', True, width=100)
+        im.insert_image(
+            os.path.join(os.getcwd(), 'images', 'logo.png'), True, width=100
+        )
         name = st.session_state.username
         st.sidebar.header(f"Welcome _{name}_")
         st.sidebar.markdown("[How to use this app?](https://www.youtube.com/)")
         app = MultiApp()
         app.add_app("Home", home.app)
         app.add_app("Result", result.app)
+        app.add_app("Feedback", feedback.app)
         app.run()
     else:
-        image_placement.insert_image('images\logo.png', False)
+        im.insert_image(
+            os.path.join(os.getcwd(), 'images', 'logo.png'), False
+        )
         authentication.show_login_page()
 
 

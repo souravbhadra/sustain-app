@@ -1,18 +1,13 @@
 import os
-import time
-import tempfile
-from PIL import Image
-import numpy as np
 import numpy.ma as ma
 import streamlit as st
 import folium
 from dotenv import load_dotenv
 from streamlit_folium import st_folium
-import matplotlib.pyplot as plt
 
 from utils import result_generation as rg
 from utils import image_processing as ip
-from utils import image_placement
+from utils import image_management as im
 
 
 # Load the environment variable
@@ -63,11 +58,11 @@ def app():
             width=900,
             height=500
         )
-        
-        #cmap = Image.open('apps\cmap.png')
-        #st.sidebar.image(cmap)
-        #st.sidebar.markdown(cmap)
-        image_placement.insert_image(
+        st.sidebar.markdown(
+            f"<p style='text-align: center'>N-Status Index</p>",
+            unsafe_allow_html=True
+        )
+        im.insert_image(
             os.path.join(os.getcwd(), 'images', 'cmap.png'),
             sidebar=True,
             margin=(0, 0, 0, 0),

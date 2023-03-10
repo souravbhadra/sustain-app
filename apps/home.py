@@ -36,7 +36,8 @@ def app():
         max_value=maximum_date, 
         help=date_help
     )
-    st.session_state['request_date'] = date.strftime("%Y-%m-%d")    
+    date_str = date.strftime("%Y-%m-%d")
+    st.session_state['request_date'] = date_str   
 
     
     if 'map_zoom' not in st.session_state:
@@ -82,10 +83,15 @@ def app():
 
     # Check the polygon
     if last_draw is None or len(last_draw) == 0:
-        st.sidebar.warning("Define Area of Interest (AOI) using the black square on the left pan of the basemap. The AOI should be less than 5 Sq Km or 1235 acres.")
+        st.sidebar.warning(
+            """
+            Define a polygon using the ⬛ button on the left pan of map. The polygon should
+            be less than 5 Sq Km or 1235 acres.
+            """
+        )
         request_button = st.sidebar.button(
             label='Submit Request',
-            help='You cannot submit a request unless you have specified a valid AOI',
+            help='You cannot submit a request unless you have specified a valid polygon',
             disabled=True
         )
     else:
@@ -99,15 +105,26 @@ def app():
         # Calculate the area of the drawn polygon
         area = gp.calculate_area(geojson_geom)
         if area > 50:
-            st.sidebar.warning(f"The AOI is too large ({area:.2f} Sq Km), it has to be less than 5 Sq Km.")
+            st.sidebar.warning(
+                f"""
+                The polygon is too large ({area:.2f} Sq Km), it has to be less than 5 Sq
+                Km or 1235 acres.
+                """
+            )
             request_button = st.sidebar.button(
                 label='Submit Request',
-                help='You cannot submit a request unless you have specified a valid AOI',
+                help='You cannot submit a request unless you have specified a valid polygon',
                 disabled=True
             )
         else:
             st.session_state["aoi_area"] = area
-            st.sidebar.success(f"Your AOI is {area:.2f} Sq Km and you are ready to start processing.")
+            st.sidebar.success(
+                f"""
+                Your polygon is {area:.2f} Sq Km and the selected date is {date_str}.
+                Click `Submit Request` to start processing. Please be patient as it might
+                take 15-20 minutes.
+                """
+            )
             #st.sidebar.write(coordinates)
             request_button = st.sidebar.button(
                 label='Submit Request',
@@ -115,7 +132,6 @@ def app():
                 disabled=False
             )
             if request_button:
-                st.sidebar.info('Processing can take 15-20 minutes, please be patient!')
                 with st.spinner('Running'):
                     with tempfile.TemporaryDirectory() as tmpdir:
                         
@@ -143,7 +159,12 @@ def app():
                         time_elapsed = (time.time()-since)/60.0
                         
                         st.balloons()
-                        st.success(f"Processing Finishsed in {time_elapsed:.2f} minutes. Go to result now!")
+                        st.success(
+                            f"""
+                            Processing finishsed in {time_elapsed:.2f} minutes. Go to
+                            `Result` now.
+                            """
+                        )
                         
                         st.session_state['map_zoom'] = output["zoom"]
                         st.session_state['map_lat'] = output["center"]["lat"]

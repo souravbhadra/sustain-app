@@ -8,7 +8,6 @@ from streamlit_folium import st_folium
 from dotenv import load_dotenv
 from PIL import Image
 
-from utils import database as db
 from utils import geoprocessing as gp
 from utils import planet_backend as pb
 from utils import image_processing as ip
@@ -83,7 +82,7 @@ def app():
 
     # Check the polygon
     if last_draw is None or len(last_draw) == 0:
-        st.sidebar.warning("Please define your Area of Interest (AOI) using the black square box on the left pan of the basemap. The AOI should not exceed 5 Sq Km or 1235 acres.")
+        st.sidebar.warning("Define Area of Interest (AOI) using the black square on the left pan of the basemap. The AOI should be less than 5 Sq Km or 1235 acres.")
         request_button = st.sidebar.button(
             label='Submit Request',
             help='You cannot submit a request unless you have specified a valid AOI',
@@ -100,7 +99,7 @@ def app():
         # Calculate the area of the drawn polygon
         area = gp.calculate_area(geojson_geom)
         if area > 50:
-            st.sidebar.warning(f"The AOI is too large ({area:.2f} Sq Km), it has to be less than 5 Sq Km or 500 acres")
+            st.sidebar.warning(f"The AOI is too large ({area:.2f} Sq Km), it has to be less than 5 Sq Km.")
             request_button = st.sidebar.button(
                 label='Submit Request',
                 help='You cannot submit a request unless you have specified a valid AOI',
@@ -135,7 +134,7 @@ def app():
                         ndvi = image_processor.ndvi()
                         ndre = image_processor.ndre()
                         
-                        del image_processor
+                        image_processor.close_rasterio()
                         
                         st.session_state['image_bounds'] = gp.get_geojson_bounds(geojson_geom)
                         st.session_state['NDVI'] = ndvi
@@ -144,7 +143,7 @@ def app():
                         time_elapsed = (time.time()-since)/60.0
                         
                         st.balloons()
-                        st.sidebar.success(f"Processing Finishsed in {time_elapsed:.2f} minutes. Go to result now!")
+                        st.success(f"Processing Finishsed in {time_elapsed:.2f} minutes. Go to result now!")
                         
                         st.session_state['map_zoom'] = output["zoom"]
                         st.session_state['map_lat'] = output["center"]["lat"]

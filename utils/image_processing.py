@@ -8,6 +8,8 @@ from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+import streamlit as st
+import base64
 
 from utils.geoprocessing import reproject_shape
 
@@ -58,6 +60,12 @@ class ImageProcessor():
         rededge = self.mask_img[6, :, :]
         ndre = (nir-rededge)/(nir+rededge)
         return ndre
+    
+    
+    def close_rasterio(
+        self
+    ):
+        self.src.close()
 
 
 def calculate_nindex_stats(

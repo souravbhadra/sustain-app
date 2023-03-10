@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 
 from utils import result_generation as rg
 from utils import image_processing as ip
+from utils import image_placement
 
 
 # Load the environment variable
@@ -63,8 +64,15 @@ def app():
             height=500
         )
         
-        cmap = Image.open('apps\cmap.png')
-        st.sidebar.image(cmap)
+        #cmap = Image.open('apps\cmap.png')
+        #st.sidebar.image(cmap)
+        #st.sidebar.markdown(cmap)
+        image_placement.insert_image(
+            os.path.join(os.getcwd(), 'images', 'cmap.png'),
+            sidebar=True,
+            margin=(0, 0, 0, 0),
+            width=100
+        )
         col1, col2, col3 = st.sidebar.columns(3)
         n_index_stats = ip.calculate_nindex_stats(n_index)
         with col1:

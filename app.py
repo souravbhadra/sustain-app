@@ -1,75 +1,40 @@
 import streamlit as st
-import streamlit_authenticator as stauth
 
 from multiapp import MultiApp
 from apps import home, result
 
-from utils import database as db
+from utils import image_placement
+from utils import authentication
 
-# Title stuffs
-st.set_page_config(page_title="SustaiN", layout="wide")
-st.sidebar.markdown("""
-<style>
-.big-font {
-    font-size:50px !important;
-}
-</style>
-""", unsafe_allow_html=True)
-st.sidebar.markdown('<p class="big-font">SustaiN</p>', unsafe_allow_html=True)
-st.sidebar.markdown(
-    'Sustainable Nitrogen Management for Corn and Sorghum using Remote Sensing',
-    unsafe_allow_html=True
+
+
+# Page config
+st.set_page_config(
+    page_title="SustaiN",
+    page_icon='images\icon.png',
+    layout="wide"
 )
 
-## LOGIN
-placeholder = st.empty()
-users = db.fetch_all_users()
-usernames = {}
-for user in users:
-    usernames[user["key"]] = {
-        'name': user["name"],
-        'password': user["password"]
-    }
-credentials = {
-    "usernames": usernames
-}
-authenticator = stauth.Authenticate(
-    credentials,
-    cookie_name="sustain_app",
-    key="abcdef",
-    cookie_expiry_days=1
-)
-name, auth_status, _ = authenticator.login("Login", "main")
 
-# Login Stuffs
+if 'logged_in' not in st.session_state:
+    image_placement.insert_image('images\logo.png', False)
+    st.session_state['logged_in'] = False
+    authentication.show_login_page()
+else:
+    if st.session_state['logged_in']:
+        image_placement.insert_image('images\logo.png', True, width=100)
+        name = st.session_state.username
+        st.sidebar.header(f"Welcome _{name}_")
+        st.sidebar.markdown("[How to use this app?](https://www.youtube.com/)")
+        app = MultiApp()
+        app.add_app("Home", home.app)
+        app.add_app("Result", result.app)
+        app.run()
+    else:
+        image_placement.insert_image('images\logo.png', False)
+        authentication.show_login_page()
 
 
-if auth_status == False:
-    st.error("Username/password is incorrect.")
-
-if auth_status == None:
-    st.warning("Please enter your username and password")
-    
-if auth_status:
-    
-    st.sidebar.header(f"Welcome _{name}_")
-    authenticator.logout("Logout", "sidebar")
-    st.session_state['username'] = name
-    
-    #with open('howto.md', 'r') as f:
-    #    howto = f.read()
-    
-    #with st.sidebar.expander("How to use this app?"):
-    #    st.markdown(howto)
-    
-    st.sidebar.markdown("[How to use this app?](https://duckduckgo.com)")
-
-    app = MultiApp()
-
-    app.add_app("Home", home.app)
-    app.add_app("Result", result.app)
-    app.run()
-    
     
 hide_menu_style = """
         <style>

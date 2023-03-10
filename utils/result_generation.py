@@ -7,6 +7,8 @@ import tempfile
 import shutil
 import os
 
+from utils import image_placement
+
 
 def colorize(
     array
@@ -73,6 +75,26 @@ def save_report_html(
     metadata,
     temp_dir
 ):  
+    cmap_html = image_placement.img_to_html(
+        os.path.join(
+            os.getcwd(),
+            'images',
+            'cmap.png'
+        ),
+        margin=(0, 0, 0, 0),
+        width=100
+    )
+    bottom_logo_html = image_placement.img_to_html(
+        os.path.join(
+            os.getcwd(),
+            'images',
+            'report-bottom-logo.png'
+        ),
+        margin=(0, 0, 0, 0),
+        width=100
+    )
+    metadata['CMAP_HTML'] = cmap_html
+    metadata['BOTTOM_LOGO_HTML'] = bottom_logo_html
     template_fpath = os.path.join(
         os.getcwd(),
         'utils',
